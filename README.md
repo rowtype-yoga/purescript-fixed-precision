@@ -12,3 +12,9 @@ You can install this package using Bower:
 ```
 bower install git@github.com:lumihq/purescript-fixed-precision.git
 ```
+
+This library depends on the NPM `big-integer` package, so you may also need to
+
+```
+npm install big-integer
+```
