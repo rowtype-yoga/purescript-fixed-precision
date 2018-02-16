@@ -1,0 +1,14 @@
+{
+  "name": "purescript-fixed-precision",
+  "version": "1.0.0",
+  "description": "",
+  "dependencies": {
+    "big-integer": "^1.6.26"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lumihq/purescript-fixed-precision.git"
+  },
+  "license": "Apache-2.0"
+}
