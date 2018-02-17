@@ -11,6 +11,7 @@ module Data.Fixed
   , floor
   , ceil
   , round
+  , approxDiv
   , kind Precision
   , One
   , TenTimes
@@ -234,6 +235,32 @@ round n = Fixed (numerator n + x) where
     | m * BigInt.fromInt 2 >= d = d - m
     | otherwise = -m
 
+-- | Approximate division of fixed-precision numbers.
+-- |
+-- | ```
+-- | > fromNumber 22.0 `approxDiv` fromNumber 7.0 :: Fixed P100
+-- | fromNumber 3.14 :: P100
+-- | ```
+-- |
+-- | _Note_: `Fixed` is not a `EuclideanRing` in general - it is not even
+-- | an integral domain, since it has non-zero zero-divisors:
+-- |
+-- | ```
+-- | > fromNumber 0.1 * fromNumber 0.1 :: Fixed P10
+-- | fromNumber 0.0 :: P10
+-- | ```
+approxDiv
+  :: forall precision
+   . KnownPrecision precision
+  => Fixed precision
+  -> Fixed precision
+  -> Fixed precision
+approxDiv a b = Fixed (x * n / y)
+  where
+    x = numerator a
+    y = numerator b
+    n = BigInt.fromInt (denominator a)
+
 instance showFixed :: KnownPrecision precision => Show (Fixed precision) where
   show n =
     "(fromNumber "
@@ -256,18 +283,5 @@ instance semiringFixed :: KnownPrecision precision => Semiring (Fixed precision)
 
 instance ringFixed :: KnownPrecision precision => Ring (Fixed precision) where
   sub (Fixed n) (Fixed m) = Fixed (n - m)
-
-instance euclideanRingFixed :: KnownPrecision precision => EuclideanRing (Fixed precision) where
-  div a b = Fixed (x * n / y)
-    where
-      x = numerator a
-      y = numerator b
-      n = BigInt.fromInt (denominator a)
-  mod a b = Fixed (((x * n) `mod` y) / n)
-    where
-      x = numerator a
-      y = numerator b
-      n = BigInt.fromInt (denominator a)
-  degree = degree <<< numerator
 
 instance commutativeRingFixed :: KnownPrecision precision => CommutativeRing (Fixed precision)
