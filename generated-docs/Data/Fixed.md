@@ -26,7 +26,6 @@ Eq (Fixed precision)
 Ord (Fixed precision)
 (KnownPrecision precision) => Semiring (Fixed precision)
 (KnownPrecision precision) => Ring (Fixed precision)
-(KnownPrecision precision) => EuclideanRing (Fixed precision)
 (KnownPrecision precision) => CommutativeRing (Fixed precision)
 ```
 
@@ -139,6 +138,27 @@ fromNumber 1.0 :: P10
 fromNumber 1.0 :: P10
 
 > round $ fromNumber (-0.1) :: Fixed P10
+fromNumber 0.0 :: P10
+```
+
+#### `approxDiv`
+
+``` purescript
+approxDiv :: forall precision. KnownPrecision precision => Fixed precision -> Fixed precision -> Fixed precision
+```
+
+Approximate division of fixed-precision numbers.
+
+```
+> fromNumber 22.0 `approxDiv` fromNumber 7.0 :: Fixed P100
+fromNumber 3.14 :: P100
+```
+
+_Note_: `Fixed` is not a `EuclideanRing` in general - it is not even
+an integral domain, since it has non-zero zero-divisors:
+
+```
+> fromNumber 0.1 * fromNumber 0.1 :: Fixed P10
 fromNumber 0.0 :: P10
 ```
 
