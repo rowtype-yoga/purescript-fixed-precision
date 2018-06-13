@@ -40,7 +40,7 @@ Create a `Fixed` representation of an `Int`.
 #### `fromNumber`
 
 ``` purescript
-fromNumber :: forall precision. KnownPrecision precision => Number -> Fixed precision
+fromNumber :: forall precision. KnownPrecision precision => Number -> Maybe (Fixed precision)
 ```
 
 Approximate a `Number` as a `Fixed` value with the specified precision.

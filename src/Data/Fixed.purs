@@ -146,8 +146,8 @@ fromNumber
   :: forall precision
    . KnownPrecision precision
   => Number
-  -> Fixed precision
-fromNumber n = Fixed (BigInt.fromNumber (n * Int.toNumber (reflectPrecision (PProxy :: PProxy precision))))
+  -> Maybe (Fixed precision)
+fromNumber n = map Fixed (BigInt.fromNumber (n * Int.toNumber (reflectPrecision (PProxy :: PProxy precision))))
 
 -- | Convert a `Fixed` value to a `Number`.
 -- |
