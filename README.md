@@ -1,5 +1,7 @@
 # purescript-fixed-precision
 
+[![Build Status](https://travis-ci.org/lumihq/purescript-fixed-precision.svg?branch=master)](https://travis-ci.org/lumihq/purescript-fixed-precision)
+
 This package implements a data type for fixed precision arithmetic,
 where precision is tracked in the types.
 
