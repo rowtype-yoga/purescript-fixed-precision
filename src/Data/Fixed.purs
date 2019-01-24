@@ -32,6 +32,7 @@ import Prelude
 import Data.BigInt as BigInt
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
+import Foreign.Class (class Encode, encode, class Decode, decode)
 
 -- | A kind for type-level precision information
 foreign import kind Precision
@@ -109,6 +110,12 @@ reifyPrecision n f = reifyPrecision (n - 1) (f <<< liftTenTimes) where
 -- | The `Semiring` and associated instances allow us to perform basic arithmetic
 -- | operations.
 newtype Fixed (precision :: Precision) = Fixed BigInt.BigInt
+
+instance decodeFixed :: Decode (Fixed precision) where
+  decode f = map (Fixed <<< BigInt.fromInt) (decode f)
+
+instance encodeFixed :: Encode (Fixed precision) where
+  encode (Fixed n) = encode (BigInt.toNumber n)
 
 -- | Extract the numerator from the representation of the number as a fraction.
 -- |

@@ -9,7 +9,8 @@
   "dependencies": {
     "purescript-integers": "^4.0.0",
     "purescript-maybe": "^4.0.0",
-    "purescript-bigints": "^4.0.0"
+    "purescript-bigints": "^4.0.0",
+    "purescript-foreign-generic": "^7.0.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^4.0.0"
