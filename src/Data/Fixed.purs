@@ -113,11 +113,11 @@ newtype Fixed (precision :: Precision) = Fixed BigInt.BigInt
 -- | Extract the numerator from the representation of the number as a fraction.
 -- |
 -- | ```
--- | > numerator (fromNumber 0.1234 :: Fixed P1000)
--- | fromString "123"
+-- | > map numerator (fromNumber 0.1234 :: Fixed P1000)
+-- | (Just fromString "123")
 -- |
--- | > numerator (fromNumber 0.1239 :: Fixed P1000)
--- | fromString "123"
+-- | > map numerator (fromNumber 0.1239 :: Fixed P1000)
+-- | (Just fromString "123")
 -- | ```
 numerator :: forall precision. Fixed precision -> BigInt.BigInt
 numerator (Fixed n) = n
@@ -136,11 +136,21 @@ fromInt i = Fixed (BigInt.fromInt i * BigInt.fromInt (reflectPrecision (PProxy :
 -- | Approximate a `Number` as a `Fixed` value with the specified precision.
 -- |
 -- | ```
--- | > fromNumber 0.1234 :: Fixed P10000
--- | fromNumber 0.1234 :: P100
+-- | > fromNumber 0.1234 :: Maybe (Fixed P10000)
+-- | (Just (fromNumber 0.1234 :: P10000))
 -- |
--- | > fromNumber 0.1234 :: Fixed P100
--- | fromNumber 0.12 :: P100
+-- | > fromNumber 0.1234 :: Maybe (Fixed P100)
+-- | (Just (fromNumber 0.12 :: P100))
+-- | ```
+-- |
+-- | When given a finite `Number`, this function always succeeds: the number is
+-- | truncated (rounded towards zero) to the closest possible `Fixed` value.
+-- | This function only returns `Nothing` if it is given NaN, or positive or
+-- | negative infinity.
+-- |
+-- | ```
+-- | > fromNumber (1.0 / 0.0) :: Maybe (Fixed P100)
+-- | Nothing
 -- | ```
 fromNumber
   :: forall precision
@@ -163,14 +173,14 @@ toNumber f = BigInt.toNumber (numerator f) / Int.toNumber (denominator f)
 -- | value.
 -- |
 -- | ```
--- | > floor $ fromNumber 0.1 :: Fixed P10
--- | fromNumber 0.0 :: P10
+-- | > map floor $ fromNumber 0.1 :: Maybe (Fixed P10)
+-- | (Just (fromNumber 0.0 :: P10))
 -- |
--- | > floor $ fromNumber 1.0 :: Fixed P10
--- | fromNumber 1.0 :: P10
+-- | > map floor $ fromNumber 1.0 :: Maybe (Fixed P10)
+-- | (Just (fromNumber 1.0 :: P10))
 -- |
--- | > floor $ fromNumber (-0.1) :: Fixed P10
--- | fromNumber (-1.0) :: P10
+-- | > floor $ fromNumber (-0.1) :: Maybe (Fixed P10)
+-- | (Just (fromNumber (-1.0) :: P10))
 -- | ```
 floor
   :: forall precision
@@ -187,14 +197,14 @@ floor n = Fixed (numerator n - x) where
 -- | value.
 -- |
 -- | ```
--- | > ceil $ fromNumber 0.1 :: Fixed P10
--- | fromNumber 1.0 :: P10
+-- | > map ceil $ fromNumber 0.1 :: Maybe (Fixed P10)
+-- | (Just (fromNumber 1.0 :: P10))
 -- |
--- | > ceil $ fromNumber 1.0 :: Fixed P10
--- | fromNumber 1.0 :: P10
+-- | > map ceil $ fromNumber 1.0 :: Maybe (Fixed P10)
+-- | (Just (fromNumber 1.0 :: P10))
 -- |
--- | > ceil $ fromNumber (-0.1) :: Fixed P10
--- | fromNumber 0.0 :: P10
+-- | > map ceil $ fromNumber (-0.1) :: Maybe (Fixed P10)
+-- | (Just (fromNumber 0.0 :: P10))
 -- | ```
 ceil
   :: forall precision
@@ -211,17 +221,17 @@ ceil n = Fixed (numerator n + x) where
 -- | Round the specified value to the nearest whole number.
 -- |
 -- | ```
--- | > round $ fromNumber 0.1 :: Fixed P10
--- | fromNumber 0.0 :: P10
+-- | > map round $ fromNumber 0.1 :: Maybe (Fixed P10)
+-- | (Just (fromNumber 0.0 :: P10))
 -- |
--- | > round $ fromNumber 0.9 :: Fixed P10
--- | fromNumber 1.0 :: P10
+-- | > map round $ fromNumber 0.9 :: Maybe (Fixed P10)
+-- | (Just (fromNumber 1.0 :: P10))
 -- |
--- | > round $ fromNumber 0.5 :: Fixed P10
--- | fromNumber 1.0 :: P10
+-- | > map round $ fromNumber 0.5 :: Maybe (Fixed P10)
+-- | (Just (fromNumber 1.0 :: P10))
 -- |
--- | > round $ fromNumber (-0.1) :: Fixed P10
--- | fromNumber 0.0 :: P10
+-- | > map round $ fromNumber (-0.1) :: Maybe (Fixed P10)
+-- | (Just (fromNumber 0.0 :: P10))
 -- | ```
 round
   :: forall precision
@@ -238,16 +248,16 @@ round n = Fixed (numerator n + x) where
 -- | Approximate division of fixed-precision numbers.
 -- |
 -- | ```
--- | > fromNumber 22.0 `approxDiv` fromNumber 7.0 :: Fixed P100
--- | fromNumber 3.14 :: P100
+-- | > lift2 approxDiv (fromNumber 22.0) (fromNumber 7.0) :: Maybe (Fixed P100)
+-- | (Just (fromNumber 3.14 :: P100))
 -- | ```
 -- |
 -- | _Note_: `Fixed` is not a `EuclideanRing` in general - it is not even
 -- | an integral domain, since it has non-zero zero-divisors:
 -- |
 -- | ```
--- | > fromNumber 0.1 * fromNumber 0.1 :: Fixed P10
--- | fromNumber 0.0 :: P10
+-- | > lift2 (*) (fromNumber 0.1) (fromNumber 0.1) :: Maybe (Fixed P10)
+-- | (Just (fromNumber 0.0 :: P10))
 -- | ```
 approxDiv
   :: forall precision
