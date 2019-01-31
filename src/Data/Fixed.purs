@@ -7,6 +7,9 @@ module Data.Fixed
   , fromInt
   , fromNumber
   , toNumber
+  , fromString
+  , toString
+  , toStringWithPrecision
   , numerator
   , floor
   , ceil
@@ -25,13 +28,20 @@ module Data.Fixed
   , PProxy(..)
   , class KnownPrecision
   , reflectPrecision
+  , reflectPrecisionDecimalPlaces
   , reifyPrecision
   ) where
 
 import Prelude
+
+import Control.MonadZero (guard)
+import Data.Array (replicate)
 import Data.BigInt as BigInt
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
+import Data.Monoid as Monoid
+import Data.String.CodeUnits as StringCU
+import Math as Math
 
 -- | A kind for type-level precision information
 foreign import kind Precision
@@ -70,6 +80,11 @@ data PProxy (precision :: Precision) = PProxy
 -- |
 -- | `reflectPrecision` returns a multiple of ten, corresponding
 -- | to the maximum number of decimal places which can be stored.
+-- |
+-- | ```
+-- | > reflectPrecision (PProxy :: PProxy P1000)
+-- | 1000
+-- | ```
 class KnownPrecision (precision :: Precision) where
   reflectPrecision :: PProxy precision -> Int
 
@@ -78,6 +93,25 @@ instance knownPrecisionOne :: KnownPrecision One where
 
 instance knownPrecisionTenTimes :: KnownPrecision p => KnownPrecision (TenTimes p) where
   reflectPrecision _ = 10 * reflectPrecision (PProxy :: PProxy p)
+
+-- | Get the number of decimal places associated with a given `Precision` at
+-- | the value level.
+-- |
+-- | ```
+-- | > reflectPrecisionDecimalPlaces (PProxy :: PProxy P1000)
+-- | 3
+-- | ```
+reflectPrecisionDecimalPlaces
+  :: forall precision
+   . KnownPrecision precision
+  => PProxy precision
+  -> Int
+reflectPrecisionDecimalPlaces _ =
+  let
+    p = reflectPrecision (PProxy :: PProxy precision)
+  in
+    Int.round (Math.log (Int.toNumber p) / Math.ln10)
+
 
 -- | Reify an non-negative integer (a power of ten) as a `Precision`.
 -- |
@@ -162,6 +196,7 @@ fromNumber n = map Fixed (BigInt.fromNumber (n * Int.toNumber (reflectPrecision 
 -- | Convert a `Fixed` value to a `Number`.
 -- |
 -- | _Note_: Overflow is possible here if the numerator is sufficiently large.
+-- | Consider using `toString` instead.
 toNumber
   :: forall precision
    . KnownPrecision precision
@@ -271,10 +306,134 @@ approxDiv a b = Fixed (x * n / y)
     y = numerator b
     n = BigInt.fromInt (denominator a)
 
+-- | Parse a fixed-precision number from a string. Any decimal digits which are
+-- | not representable in the specified precision will be ignored.
+-- |
+-- | ```
+-- | > fromString "123.456" :: Maybe (Fixed P1000)
+-- | (Just (fromString "123.456" :: P1000))
+-- | ```
+-- |
+-- | Where possible, this function should be preferred over `fromNumber`, since
+-- | it is exact (whereas `fromNumber` can only provide an approximation for
+-- | larger inputs).
+-- |
+-- | ```
+-- | > fromString "9007199254740992.5" :: Maybe (Fixed P10)
+-- | (Just (fromString "9007199254740992.5" :: P10))
+-- |
+-- | > fromNumber 9007199254740992.5 :: Maybe (Fixed P10)
+-- | (Just (fromString "9007199254740992.0" :: P10))
+-- | ```
+-- |
+fromString
+  :: forall precision
+   . KnownPrecision precision
+  => String
+  -> Maybe (Fixed precision)
+fromString str =
+  let
+    numDigits = reflectPrecisionDecimalPlaces (PProxy :: PProxy precision)
+    denom = BigInt.fromInt (reflectPrecision (PProxy :: PProxy precision))
+
+    isDigit = between '0' '9'
+    wholeDigits = StringCU.countPrefix isDigit str
+    { before, after } = StringCU.splitAt wholeDigits str
+
+  in do
+    wholePart <-
+      BigInt.fromString before
+    fractionPart <-
+      case after of
+        "" -> pure zero
+        "." -> pure zero
+        _ -> do
+          guard (StringCU.charAt 0 after == Just '.')
+          let raw = StringCU.drop 1 after
+          BigInt.fromString (rightJustify numDigits '0' raw)
+    pure (Fixed (wholePart * denom + fractionPart))
+
+-- | Represent a `Fixed` value as a string, with the given number of decimal
+-- | places.
+-- |
+-- | ```
+-- | > map (toStringWithPrecision 2) (fromString "1234.567" :: Maybe (Fixed P1000))
+-- | (Just "1234.56")
+-- | ```
+-- |
+-- | If more decimal places are asked for than the type can provide, the extra
+-- | decimal places will be provided as zeroes.
+-- |
+-- | ```
+-- | > map (toStringWithPrecision 3) (fromString "1234.5" :: Maybe (Fixed P10))
+-- | (Just "1234.500")
+-- | ```
+toStringWithPrecision
+  :: forall precision
+   . KnownPrecision precision
+  => Int
+  -> Fixed precision
+  -> String
+toStringWithPrecision requestedDigits fixed@(Fixed n) =
+  let
+    denom = BigInt.fromInt (reflectPrecision (PProxy :: PProxy precision))
+    denomDigits = reflectPrecisionDecimalPlaces (PProxy :: PProxy precision)
+    wholePart = n / denom
+    fractionalPart = n `mod` denom
+  in
+    BigInt.toString wholePart
+    <> Monoid.guard (requestedDigits > 0)
+        ("." <>
+          rightJustify requestedDigits '0'
+            (leftJustify denomDigits '0' (BigInt.toString fractionalPart)))
+
+-- | Represent a `Fixed` value as a string, using all of the decimal places it
+-- | can represent (based on its precision).
+-- |
+-- | ```
+-- | > map toString (fromString "100.5" :: Maybe (Fixed P10))
+-- | (Just "100.5")
+-- |
+-- | > map toString (fromString "100.5" :: Maybe (Fixed P100))
+-- | (Just "100.50")
+-- | ```
+toString
+  :: forall precision
+   . KnownPrecision precision
+  => Fixed precision
+  -> String
+toString =
+  toStringWithPrecision
+    (reflectPrecisionDecimalPlaces (PProxy :: PProxy precision))
+
+-- | If a string has less than the given number of characters (measured in code
+-- | units), extend it with the given character until it reaches that length.
+-- | If it has more, drop them from the end.
+rightJustify :: Int -> Char -> String -> String
+rightJustify desiredLength padding str =
+  let
+    actualLength = StringCU.length str
+  in
+    if actualLength >= desiredLength
+      then StringCU.take desiredLength str
+      else str <> StringCU.fromCharArray (replicate (desiredLength - actualLength) padding)
+
+-- | If a string has less than the given number of characters (measured in code
+-- | units), prepend it with the given character until it reaches that length.
+-- | If it has more, drop them from the start.
+leftJustify :: Int -> Char -> String -> String
+leftJustify desiredLength padding str =
+  let
+    actualLength = StringCU.length str
+  in
+    if actualLength >= desiredLength
+      then StringCU.takeRight desiredLength str
+      else StringCU.fromCharArray (replicate (desiredLength - actualLength) padding) <> str
+
 instance showFixed :: KnownPrecision precision => Show (Fixed precision) where
   show n =
-    "(fromNumber "
-      <> show (toNumber n)
+    "(fromString "
+      <> show (toString n)
       <> " :: P"
       <> show (reflectPrecision (PProxy :: PProxy precision))
       <> ")"
