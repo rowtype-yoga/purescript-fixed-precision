@@ -110,7 +110,7 @@ reflectPrecisionDecimalPlaces _ =
   let
     p = reflectPrecision (PProxy :: PProxy precision)
   in
-    Int.round (Math.log (Int.toNumber p) / Math.log 10.0)
+    Int.round (Math.log (Int.toNumber p) / Math.ln10)
 
 
 -- | Reify an non-negative integer (a power of ten) as a `Precision`.
