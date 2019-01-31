@@ -46,11 +46,21 @@ fromNumber :: forall precision. KnownPrecision precision => Number -> Maybe (Fix
 Approximate a `Number` as a `Fixed` value with the specified precision.
 
 ```
-> fromNumber 0.1234 :: Fixed P10000
-fromNumber 0.1234 :: P100
+> fromNumber 0.1234 :: Maybe (Fixed P10000)
+(Just (fromNumber 0.1234 :: P10000))
 
-> fromNumber 0.1234 :: Fixed P100
-fromNumber 0.12 :: P100
+> fromNumber 0.1234 :: Maybe (Fixed P100)
+(Just (fromNumber 0.12 :: P100))
+```
+
+When given a finite `Number`, this function always succeeds: the number is
+truncated (rounded towards zero) to the closest possible `Fixed` value.
+This function only returns `Nothing` if it is given NaN, or positive or
+negative infinity.
+
+```
+> fromNumber (1.0 / 0.0) :: Maybe (Fixed P100)
+Nothing
 ```
 
 #### `toNumber`
@@ -62,6 +72,73 @@ toNumber :: forall precision. KnownPrecision precision => Fixed precision -> Num
 Convert a `Fixed` value to a `Number`.
 
 _Note_: Overflow is possible here if the numerator is sufficiently large.
+Consider using `toString` instead.
+
+#### `fromString`
+
+``` purescript
+fromString :: forall precision. KnownPrecision precision => String -> Maybe (Fixed precision)
+```
+
+Parse a fixed-precision number from a string. Any decimal digits which are
+not representable in the specified precision will be ignored.
+
+```
+> fromString "123.456" :: Maybe (Fixed P1000)
+(Just (fromString "123.456" :: P1000))
+```
+
+Where possible, this function should be preferred over `fromNumber`, since
+it is exact (whereas `fromNumber` can only provide an approximation for
+larger inputs).
+
+```
+> fromString "9007199254740992.5" :: Maybe (Fixed P10)
+(Just (fromString "9007199254740992.5" :: P10))
+
+> fromNumber 9007199254740992.5 :: Maybe (Fixed P10)
+(Just (fromString "9007199254740992.0" :: P10))
+```
+
+
+#### `toString`
+
+``` purescript
+toString :: forall precision. KnownPrecision precision => Fixed precision -> String
+```
+
+Represent a `Fixed` value as a string, using all of the decimal places it
+can represent (based on its precision).
+
+```
+> map toString (fromString "100.5" :: Maybe (Fixed P10))
+(Just "100.5")
+
+> map toString (fromString "100.5" :: Maybe (Fixed P100))
+(Just "100.50")
+```
+
+#### `toStringWithPrecision`
+
+``` purescript
+toStringWithPrecision :: forall precision. KnownPrecision precision => Int -> Fixed precision -> String
+```
+
+Represent a `Fixed` value as a string, with the given number of decimal
+places.
+
+```
+> map (toStringWithPrecision 2) (fromString "1234.567" :: Maybe (Fixed P1000))
+(Just "1234.56")
+```
+
+If more decimal places are asked for than the type can provide, the extra
+decimal places will be provided as zeroes.
+
+```
+> map (toStringWithPrecision 3) (fromString "1234.5" :: Maybe (Fixed P10))
+(Just "1234.500")
+```
 
 #### `numerator`
 
@@ -72,11 +149,11 @@ numerator :: forall precision. Fixed precision -> BigInt
 Extract the numerator from the representation of the number as a fraction.
 
 ```
-> numerator (fromNumber 0.1234 :: Fixed P1000)
-fromString "123"
+> map numerator (fromNumber 0.1234 :: Fixed P1000)
+(Just fromString "123")
 
-> numerator (fromNumber 0.1239 :: Fixed P1000)
-fromString "123"
+> map numerator (fromNumber 0.1239 :: Fixed P1000)
+(Just fromString "123")
 ```
 
 #### `floor`
@@ -89,14 +166,14 @@ Calculate the largest whole number smaller than or equal to the provided
 value.
 
 ```
-> floor $ fromNumber 0.1 :: Fixed P10
-fromNumber 0.0 :: P10
+> map floor $ fromNumber 0.1 :: Maybe (Fixed P10)
+(Just (fromNumber 0.0 :: P10))
 
-> floor $ fromNumber 1.0 :: Fixed P10
-fromNumber 1.0 :: P10
+> map floor $ fromNumber 1.0 :: Maybe (Fixed P10)
+(Just (fromNumber 1.0 :: P10))
 
-> floor $ fromNumber (-0.1) :: Fixed P10
-fromNumber (-1.0) :: P10
+> floor $ fromNumber (-0.1) :: Maybe (Fixed P10)
+(Just (fromNumber (-1.0) :: P10))
 ```
 
 #### `ceil`
@@ -109,14 +186,14 @@ Calculate the smallest whole number greater than or equal to the provided
 value.
 
 ```
-> ceil $ fromNumber 0.1 :: Fixed P10
-fromNumber 1.0 :: P10
+> map ceil $ fromNumber 0.1 :: Maybe (Fixed P10)
+(Just (fromNumber 1.0 :: P10))
 
-> ceil $ fromNumber 1.0 :: Fixed P10
-fromNumber 1.0 :: P10
+> map ceil $ fromNumber 1.0 :: Maybe (Fixed P10)
+(Just (fromNumber 1.0 :: P10))
 
-> ceil $ fromNumber (-0.1) :: Fixed P10
-fromNumber 0.0 :: P10
+> map ceil $ fromNumber (-0.1) :: Maybe (Fixed P10)
+(Just (fromNumber 0.0 :: P10))
 ```
 
 #### `round`
@@ -128,17 +205,17 @@ round :: forall precision. KnownPrecision precision => Fixed precision -> Fixed 
 Round the specified value to the nearest whole number.
 
 ```
-> round $ fromNumber 0.1 :: Fixed P10
-fromNumber 0.0 :: P10
+> map round $ fromNumber 0.1 :: Maybe (Fixed P10)
+(Just (fromNumber 0.0 :: P10))
 
-> round $ fromNumber 0.9 :: Fixed P10
-fromNumber 1.0 :: P10
+> map round $ fromNumber 0.9 :: Maybe (Fixed P10)
+(Just (fromNumber 1.0 :: P10))
 
-> round $ fromNumber 0.5 :: Fixed P10
-fromNumber 1.0 :: P10
+> map round $ fromNumber 0.5 :: Maybe (Fixed P10)
+(Just (fromNumber 1.0 :: P10))
 
-> round $ fromNumber (-0.1) :: Fixed P10
-fromNumber 0.0 :: P10
+> map round $ fromNumber (-0.1) :: Maybe (Fixed P10)
+(Just (fromNumber 0.0 :: P10))
 ```
 
 #### `approxDiv`
@@ -150,16 +227,16 @@ approxDiv :: forall precision. KnownPrecision precision => Fixed precision -> Fi
 Approximate division of fixed-precision numbers.
 
 ```
-> fromNumber 22.0 `approxDiv` fromNumber 7.0 :: Fixed P100
-fromNumber 3.14 :: P100
+> lift2 approxDiv (fromNumber 22.0) (fromNumber 7.0) :: Maybe (Fixed P100)
+(Just (fromNumber 3.14 :: P100))
 ```
 
 _Note_: `Fixed` is not a `EuclideanRing` in general - it is not even
 an integral domain, since it has non-zero zero-divisors:
 
 ```
-> fromNumber 0.1 * fromNumber 0.1 :: Fixed P10
-fromNumber 0.0 :: P10
+> lift2 (*) (fromNumber 0.1) (fromNumber 0.1) :: Maybe (Fixed P10)
+(Just (fromNumber 0.0 :: P10))
 ```
 
 #### `Precision`
@@ -272,10 +349,29 @@ value at runtime, given a `PProxy`.
 `reflectPrecision` returns a multiple of ten, corresponding
 to the maximum number of decimal places which can be stored.
 
+```
+> reflectPrecision (PProxy :: PProxy P1000)
+1000
+```
+
 ##### Instances
 ``` purescript
 KnownPrecision One
 (KnownPrecision p) => KnownPrecision (TenTimes p)
+```
+
+#### `reflectPrecisionDecimalPlaces`
+
+``` purescript
+reflectPrecisionDecimalPlaces :: forall precision. KnownPrecision precision => PProxy precision -> Int
+```
+
+Get the number of decimal places associated with a given `Precision` at
+the value level.
+
+```
+> reflectPrecisionDecimalPlaces (PProxy :: PProxy P1000)
+3
 ```
 
 #### `reifyPrecision`
