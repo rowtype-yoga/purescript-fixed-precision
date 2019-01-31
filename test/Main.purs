@@ -2,8 +2,8 @@ module Test.Main where
 
 import Prelude
 
-import Data.Fixed (class KnownPrecision, Fixed, PProxy, fromNumber, reifyPrecision)
-import Data.Maybe (Maybe, fromJust, isJust)
+import Data.Fixed (class KnownPrecision, Fixed, PProxy, fromNumber, fromString, reifyPrecision, toString)
+import Data.Maybe (Maybe(..), fromJust, isJust)
 import Effect (Effect)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
@@ -29,7 +29,7 @@ main = do
       a <- genFixedP p
       b <- genFixedP p
       c <- genFixedP p
-      pure $ (a + b) + c == a + (b + c) <?> show { a, b, c }
+      pure $ (a + b) + c == a + (b + c) <?> show { precision, a, b, c }
 
   log "Identity: zero + a = a + zero = a"
 
@@ -37,12 +37,12 @@ main = do
     precision <- chooseInt 0 10
     unsafePartial fromJust $ reifyPrecision precision \p -> do
       a <- genFixedP p
-      pure $ zero + a == a <?> show { a }
+      pure $ zero + a == a <?> show { precision, a }
   quickCheck' 1000 do
     precision <- chooseInt 0 10
     unsafePartial fromJust $ reifyPrecision precision \p -> do
       a <- genFixedP p
-      pure $ a + zero == a <?> show { a }
+      pure $ a + zero == a <?> show { precision, a }
 
   log "Commutative: a + b = b + a"
   quickCheck' 1000 do
@@ -50,7 +50,7 @@ main = do
     unsafePartial fromJust $ reifyPrecision precision \p -> do
       a <- genFixedP p
       b <- genFixedP p
-      pure $ a + b == b + a <?> show { a, b }
+      pure $ a + b == b + a <?> show { precision, a, b }
 
   log "Multiplicative unit: one * a = a * one = a"
 
@@ -58,21 +58,32 @@ main = do
     precision <- chooseInt 0 10
     unsafePartial fromJust $ reifyPrecision precision \p -> do
       a <- genFixedP p
-      pure $ one * a == a <?> show { a }
+      pure $ one * a == a <?> show { precision, a }
   quickCheck' 1000 do
     precision <- chooseInt 0 10
     unsafePartial fromJust $ reifyPrecision precision \p -> do
       a <- genFixedP p
-      pure $ a * one == a <?> show { a }
+      pure $ a * one == a <?> show { precision, a }
 
   log "Multiplicative zero: zero * a = a * zero = zero"
   quickCheck' 1000 do
     precision <- chooseInt 0 10
     unsafePartial fromJust $ reifyPrecision precision \p -> do
       a <- genFixedP p
-      pure $ zero * a == zero <?> show { a }
+      pure $ zero * a == zero <?> show { precision, a }
   quickCheck' 1000 do
     precision <- chooseInt 0 10
     unsafePartial fromJust $ reifyPrecision precision \p -> do
       a <- genFixedP p
-      pure $ a * zero == zero <?> show { a }
+      pure $ a * zero == zero <?> show { precision, a }
+
+  log ""
+  log "Parsing/printing"
+  log ""
+
+  log "Roundtrip: fromString <<< toString == Just"
+  quickCheck' 1000 do
+    precision <- chooseInt 0 100
+    unsafePartial fromJust $ reifyPrecision precision \p -> do
+      a <- genFixedP p
+      pure $ fromString (toString a) == Just a <?> show { precision, a }
