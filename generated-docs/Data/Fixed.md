@@ -340,7 +340,7 @@ A value-level proxy for a type-level precision.
 
 ``` purescript
 class KnownPrecision (precision :: Precision)  where
-  reflectPrecision :: PProxy precision -> Int
+  reflectPrecision :: PProxy precision -> BigInt
 ```
 
 Precision which is known, i.e. it can be reflected to a
