@@ -191,7 +191,7 @@ fromNumber
    . KnownPrecision precision
   => Number
   -> Maybe (Fixed precision)
-fromNumber n = map Fixed (BigInt.fromNumber (n * BigInt.toNumber (reflectPrecision (PProxy :: PProxy precision))))
+fromNumber n = map Fixed (BigInt.fromNumber (Math.round (n * BigInt.toNumber (reflectPrecision (PProxy :: PProxy precision)))))
 
 -- | Convert a `Fixed` value to a `Number`.
 -- |

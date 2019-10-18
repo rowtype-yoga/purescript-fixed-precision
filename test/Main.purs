@@ -2,12 +2,14 @@ module Test.Main where
 
 import Prelude
 
-import Data.Fixed (class KnownPrecision, Fixed, PProxy, fromNumber, fromString, reifyPrecision, toString, P100)
+import Data.Fixed (class KnownPrecision, Fixed, PProxy, fromNumber, toNumber, fromString, reifyPrecision, reflectPrecision, toString, P100)
+import Data.BigInt as BigInt
 import Data.Maybe (Maybe(..), fromJust, isJust)
 import Effect (Effect)
 import Effect.Console (log)
+import Math as Math
 import Partial.Unsafe (unsafePartial)
-import Test.QuickCheck (arbitrary, quickCheck, quickCheck', (<?>), (===))
+import Test.QuickCheck (arbitrary, quickCheck', (<?>), (===))
 import Test.QuickCheck.Gen (Gen, chooseInt, suchThat)
 
 -- Just here to package up the safe use of `unsafePartial`.
@@ -16,6 +18,14 @@ trying gen f = map (unsafePartial fromJust) (map f gen `suchThat` isJust)
 
 genFixedP :: forall p. KnownPrecision p => PProxy p -> Gen (Fixed p)
 genFixedP _ = map fromNumber arbitrary `trying` identity
+
+fromNumberWith
+  :: forall precision
+  .  KnownPrecision precision
+  => PProxy precision
+  -> Number
+  -> Maybe (Fixed precision)
+fromNumberWith _ = fromNumber
 
 main :: Effect Unit
 main = do
@@ -92,3 +102,24 @@ main = do
     unsafePartial fromJust $ reifyPrecision precision \p -> do
       a <- genFixedP p
       pure $ fromString (toString a) == Just a <?> show { precision, a }
+
+  log ""
+  log "Conversions to/from Number"
+  log ""
+
+  log "Roundtrip inaccuracy should be bounded by precision"
+  quickCheck' 1000 \x -> do
+    -- This is limited by the precision of Number
+    precision <- chooseInt 0 10
+    pure $ unsafePartial fromJust $ reifyPrecision precision \p -> do
+      -- Note: we use 0.5 here because these numbers should differ by no more
+      -- than half of the distance between two consecutive representable values
+      -- of the type `Fixed precision`.
+      let epsilon = 0.5 / BigInt.toNumber (reflectPrecision p)
+      case toNumber <$> fromNumberWith p x of
+        Just x' ->
+          (Math.abs (x' - x) <= epsilon)
+          <?> show { precision, epsilon, x, x' }
+        Nothing ->
+          false
+          <?> ("failed to roundtrip via Number: " <> show { precision, x })
