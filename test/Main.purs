@@ -82,7 +82,7 @@ main = do
   log ""
 
   log "An empty string parses Nothing"
-  quickCheck
+  quickCheck' 1
     let x = fromString "" :: Maybe (Fixed P100)
     in x === Nothing
 
