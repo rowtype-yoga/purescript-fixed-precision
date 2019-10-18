@@ -2,14 +2,14 @@ module Test.Main where
 
 import Prelude
 
+import Data.Fixed (class KnownPrecision, Fixed, PProxy, fromNumber, toNumber, fromString, reifyPrecision, reflectPrecision, toString, P100)
 import Data.BigInt as BigInt
-import Data.Fixed (class KnownPrecision, Fixed, PProxy, fromNumber, toNumber, fromString, reifyPrecision, reflectPrecision, toString)
 import Data.Maybe (Maybe(..), fromJust, isJust)
 import Effect (Effect)
 import Effect.Console (log)
 import Math as Math
 import Partial.Unsafe (unsafePartial)
-import Test.QuickCheck (arbitrary, quickCheck', (<?>))
+import Test.QuickCheck (arbitrary, quickCheck', (<?>), (===))
 import Test.QuickCheck.Gen (Gen, chooseInt, suchThat)
 
 -- Just here to package up the safe use of `unsafePartial`.
@@ -90,6 +90,11 @@ main = do
   log ""
   log "Parsing/printing"
   log ""
+
+  log "An empty string parses Nothing"
+  quickCheck' 1
+    let x = fromString "" :: Maybe (Fixed P100)
+    in x === Nothing
 
   log "Roundtrip: fromString <<< toString == Just"
   quickCheck' 1000 do

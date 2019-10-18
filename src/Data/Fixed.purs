@@ -41,6 +41,7 @@ import Data.Int as Int
 import Data.Maybe (Maybe(..))
 import Data.Monoid as Monoid
 import Data.String.CodeUnits as StringCU
+import Data.String as String
 import Math as Math
 
 -- | A kind for type-level precision information
@@ -340,6 +341,7 @@ fromString str =
     { before, after } = StringCU.splitAt wholeDigits str
 
   in do
+    guard (not (String.null str))
     wholePart <-
       BigInt.fromString before
     fractionPart <-
