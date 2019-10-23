@@ -144,7 +144,7 @@ reifyPrecision n f = reifyPrecision (n - 1) (f <<< liftTenTimes) where
 -- | The `Semiring` and associated instances allow us to perform basic arithmetic
 -- | operations. Unlike `Number`, addition of `Fixed` numbers does satisfy the
 -- | associativity law, but like `Number`, most of the other laws of the
--- | numeric hierarchy classes are not satisfied.
+-- | numeric hierarchy classes are not satisfied due to rounding errors.
 -- |
 newtype Fixed (precision :: Precision) = Fixed BigInt.BigInt
 
