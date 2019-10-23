@@ -454,3 +454,6 @@ instance euclideanRingFixed :: KnownPrecision precision => EuclideanRing (Fixed 
       x = numerator a
       y = numerator b
       n = denominator a
+
+instance divisionRingFixed :: KnownPrecision precision => DivisionRing (Fixed precision) where
+  recip x = one / x
