@@ -5,6 +5,7 @@
 module Data.Fixed
   ( Fixed
   , fromInt
+  , fromBigInt
   , fromNumber
   , toNumber
   , fromString
@@ -36,6 +37,7 @@ import Prelude
 
 import Control.MonadZero (guard)
 import Data.Array (replicate)
+import Data.BigInt (BigInt)
 import Data.BigInt as BigInt
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
@@ -169,7 +171,15 @@ fromInt
    . KnownPrecision precision
   => Int
   -> Fixed precision
-fromInt i = Fixed (BigInt.fromInt i * reflectPrecision (PProxy :: PProxy precision))
+fromInt = fromBigInt <<< BigInt.fromInt
+
+-- | Create a `Fixed` representation of a `BigInt`.
+fromBigInt
+  :: forall precision
+   . KnownPrecision precision
+  => BigInt
+  -> Fixed precision
+fromBigInt i = Fixed (i * reflectPrecision (PProxy :: PProxy precision))
 
 -- | Approximate a `Number` as a `Fixed` value with the specified precision.
 -- |
