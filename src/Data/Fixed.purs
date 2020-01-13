@@ -43,6 +43,7 @@ import Data.Monoid as Monoid
 import Data.String.CodeUnits as StringCU
 import Data.String as String
 import Math as Math
+import Prim.TypeError (class Warn, Text)
 
 -- | A kind for type-level precision information
 foreign import kind Precision
@@ -141,7 +142,10 @@ reifyPrecision n f = reifyPrecision (n - 1) (f <<< liftTenTimes) where
 -- | only the numerator, and carrying the precision around as type information.
 -- |
 -- | The `Semiring` and associated instances allow us to perform basic arithmetic
--- | operations.
+-- | operations. Unlike `Number`, addition of `Fixed` numbers does satisfy the
+-- | associativity law, but like `Number`, most of the other laws of the
+-- | numeric hierarchy classes are not satisfied due to rounding errors.
+-- |
 newtype Fixed (precision :: Precision) = Fixed BigInt.BigInt
 
 -- | Extract the numerator from the representation of the number as a fraction.
@@ -280,31 +284,16 @@ round n = Fixed (numerator n + x) where
     | m * BigInt.fromInt 2 >= d = d - m
     | otherwise = -m
 
--- | Approximate division of fixed-precision numbers.
--- |
--- | ```
--- | > lift2 approxDiv (fromNumber 22.0) (fromNumber 7.0) :: Maybe (Fixed P100)
--- | (Just (fromNumber 3.14 :: P100))
--- | ```
--- |
--- | _Note_: `Fixed` is not a `EuclideanRing` in general - it is not even
--- | an integral domain, since it has non-zero zero-divisors:
--- |
--- | ```
--- | > lift2 (*) (fromNumber 0.1) (fromNumber 0.1) :: Maybe (Fixed P10)
--- | (Just (fromNumber 0.0 :: P10))
--- | ```
+-- | Division of fixed-precision numbers. This function is deprecated; you
+-- | should use `/` from the `EuclideanRing` instance instead.
 approxDiv
   :: forall precision
-   . KnownPrecision precision
+   . Warn (Text "This function is deprecated, please use `/` instead")
+  => KnownPrecision precision
   => Fixed precision
   -> Fixed precision
   -> Fixed precision
-approxDiv a b = Fixed (x * n / y)
-  where
-    x = numerator a
-    y = numerator b
-    n = denominator a
+approxDiv = div
 
 -- | Parse a fixed-precision number from a string. Any decimal digits which are
 -- | not representable in the specified precision will be ignored.
@@ -455,3 +444,16 @@ instance ringFixed :: KnownPrecision precision => Ring (Fixed precision) where
   sub (Fixed n) (Fixed m) = Fixed (n - m)
 
 instance commutativeRingFixed :: KnownPrecision precision => CommutativeRing (Fixed precision)
+
+instance euclideanRingFixed :: KnownPrecision precision => EuclideanRing (Fixed precision) where
+  degree = const 1
+  mod _ _ = zero
+  div a b =
+    Fixed (x * n / y)
+    where
+      x = numerator a
+      y = numerator b
+      n = denominator a
+
+instance divisionRingFixed :: KnownPrecision precision => DivisionRing (Fixed precision) where
+  recip x = one / x
