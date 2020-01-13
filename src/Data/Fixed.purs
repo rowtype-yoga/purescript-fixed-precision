@@ -171,7 +171,7 @@ fromInt
    . KnownPrecision precision
   => Int
   -> Fixed precision
-fromInt i = Fixed (BigInt.fromInt i * reflectPrecision (PProxy :: PProxy precision))
+fromInt = fromBigInt <<< BigInt.fromInt
 
 -- | Create a `Fixed` representation of a `BigInt`.
 fromBigInt
