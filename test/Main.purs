@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude
 
-import Data.Fixed (class KnownPrecision, Fixed, PProxy, fromNumber, toNumber, fromString, reifyPrecision, reflectPrecision, toString, P100)
+import Data.Fixed (class KnownPrecision, Fixed, PProxy, fromNumber, toNumber, fromString, reifyPrecision, reflectPrecision, toString, P100, rescale, fromBigInt, floor)
 import Data.BigInt as BigInt
 import Data.Maybe (Maybe(..), fromJust, isJust)
 import Effect (Effect)
@@ -26,6 +26,28 @@ fromNumberWith
   -> Number
   -> Maybe (Fixed precision)
 fromNumberWith _ = fromNumber
+
+-- | For type hinting.
+withPrecisionOf
+  :: forall precision
+   . PProxy precision
+  -> Fixed precision
+  -> Fixed precision
+withPrecisionOf _ x = x
+
+floorToPrecision
+  :: forall precision
+   . KnownPrecision precision
+  => Int
+  -> Fixed precision
+  -> Fixed precision
+floorToPrecision p =
+  (_ / scaleFactor)
+  <<< floor
+  <<< (_ * scaleFactor)
+  where
+  scaleFactor =
+    fromBigInt (BigInt.pow (BigInt.fromInt 10) (BigInt.fromInt p))
 
 main :: Effect Unit
 main = do
@@ -123,3 +145,31 @@ main = do
         Nothing ->
           false
           <?> ("failed to roundtrip via Number: " <> show { precision, x })
+
+  log ""
+  log "rescale"
+  log ""
+
+  log "rescaling up then down should be no-op"
+  quickCheck' 1000 do
+    let lo = 10
+    hi <- chooseInt 10 20
+    unsafePartial fromJust $ join $
+      reifyPrecision lo \lo_ ->
+        reifyPrecision hi \hi_ -> do
+          x <- genFixedP lo_
+          let y = withPrecisionOf hi_ $ rescale x
+          let xx = rescale y
+          pure $ x == xx <?> show { x, xx, y }
+
+  log "rescaling down then up should be the same as flooring"
+  quickCheck' 1000 do
+    let hi = 20
+    lo <- chooseInt 10 20
+    unsafePartial fromJust $ join $
+      reifyPrecision lo \lo_ ->
+        reifyPrecision hi \hi_ -> do
+          x <- genFixedP hi_
+          let y = withPrecisionOf lo_ $ rescale x
+          let xx = floorToPrecision lo x
+          pure $ xx == rescale y <?> show { x, xx, y }

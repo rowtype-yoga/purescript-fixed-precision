@@ -15,6 +15,7 @@ module Data.Fixed
   , floor
   , ceil
   , round
+  , rescale
   , approxDiv
   , kind Precision
   , One
@@ -40,11 +41,12 @@ import Data.Array (replicate)
 import Data.BigInt (BigInt)
 import Data.BigInt as BigInt
 import Data.Int as Int
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromJust)
 import Data.Monoid as Monoid
 import Data.String.CodeUnits as StringCU
 import Data.String as String
 import Math as Math
+import Partial.Unsafe (unsafePartial)
 import Prim.TypeError (class Warn, Text)
 
 -- | A kind for type-level precision information
@@ -293,6 +295,17 @@ round n = Fixed (numerator n + x) where
   x | m < zero && (m + d) * BigInt.fromInt 2 >= d = -m
     | m * BigInt.fromInt 2 >= d = d - m
     | otherwise = -m
+
+-- | Change the precision of a fixed-point number. If the new precision is
+-- | less than the old precision, extra decimal places will be lost.
+rescale
+  :: forall precision1 precision2
+   . KnownPrecision precision1
+  => KnownPrecision precision2
+  => Fixed precision1
+  -> Fixed precision2
+rescale =
+  unsafePartial (fromJust <<< fromString <<< toString)
 
 -- | Division of fixed-precision numbers. This function is deprecated; you
 -- | should use `/` from the `EuclideanRing` instance instead.
