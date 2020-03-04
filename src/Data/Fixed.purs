@@ -12,6 +12,7 @@ module Data.Fixed
   , toString
   , toStringWithPrecision
   , numerator
+  , denominator
   , floor
   , ceil
   , round
