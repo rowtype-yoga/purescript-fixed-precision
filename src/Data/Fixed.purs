@@ -44,6 +44,7 @@ import Data.BigInt as BigInt
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromJust)
 import Data.Monoid as Monoid
+import Data.Ord (abs)
 import Data.String.CodeUnits as StringCU
 import Data.String as String
 import Math as Math
@@ -344,12 +345,19 @@ fromString
    . KnownPrecision precision
   => String
   -> Maybe (Fixed precision)
-fromString str =
+fromString str' =
   let
     numDigits = reflectPrecisionDecimalPlaces (PProxy :: PProxy precision)
     denom = reflectPrecision (PProxy :: PProxy precision)
 
     isDigit = between '0' '9'
+
+    { sign, str } =
+      case String.stripPrefix (String.Pattern "-") str' of
+        Just str ->
+          { sign: negate one, str }
+        Nothing ->
+          { sign: one, str: str' }
     wholeDigits = StringCU.countPrefix isDigit str
     { before, after } = StringCU.splitAt wholeDigits str
 
@@ -365,7 +373,7 @@ fromString str =
           guard (StringCU.charAt 0 after == Just '.')
           let raw = StringCU.drop 1 after
           BigInt.fromString (rightJustify numDigits '0' raw)
-    pure (Fixed (wholePart * denom + fractionPart))
+    pure (Fixed (sign * (wholePart * denom + fractionPart)))
 
 -- | Represent a `Fixed` value as a string, with the given number of decimal
 -- | places.
@@ -392,10 +400,13 @@ toStringWithPrecision requestedDigits fixed@(Fixed n) =
   let
     denom = denominator fixed
     denomDigits = reflectPrecisionDecimalPlaces (PProxy :: PProxy precision)
-    wholePart = n / denom
-    fractionalPart = n `mod` denom
+    absNum = abs n
+    -- Use 'quot' and 'rem' because we need to round towards zero
+    wholePart = BigInt.quot absNum denom
+    fractionalPart = BigInt.rem absNum denom
   in
-    BigInt.toString wholePart
+    (if n < zero then "-" else "")
+    <> BigInt.toString wholePart
     <> Monoid.guard (requestedDigits > 0)
         ("." <>
           rightJustify requestedDigits '0'
