@@ -1,6 +1,11 @@
 # purescript-fixed-precision
 
-[![Build Status](https://travis-ci.org/lumihq/purescript-fixed-precision.svg?branch=master)](https://travis-ci.org/lumihq/purescript-fixed-precision)
+[![Build Status](https://github.com/lumihq/purescript-fixed-precision/actions/workflows/ci.yml/badge.svg)](https://github.com/lumihq/purescript-fixed-precision/actions/workflows/ci.yml)
+<a href="https://pursuit.purescript.org/packages/purescript-fixed-precision">
+  <img src="https://pursuit.purescript.org/packages/purescript-fixed-precision/badge"
+       alt="Fixed Precision on Pursuit">
+  </img>
+</a>
 
 This package implements a data type for fixed precision arithmetic,
 where precision is tracked in the types.
