@@ -2,7 +2,9 @@
 /node_modules/
 /.pulp-cache/
 /output/
+/output-pulp/
 /.psc-package/
 /.psc*
 /.purs*
 /.psa*
+.spago
