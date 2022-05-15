@@ -16,7 +16,7 @@
   },
   "scripts": {
     "deps": "bower install",
-    "build": "pulp build -o output-pulp",
+    "build": "pulp build",
     "test": "pulp test",
     "clean": "rm -rf .spago bower_components output output-pulp node_modules"
   },
