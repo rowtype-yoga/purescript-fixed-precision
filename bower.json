@@ -12,14 +12,14 @@
     "output"
   ],
   "dependencies": {
-    "purescript-integers": "^4.0.0",
-    "purescript-maybe": "^4.0.0",
-    "purescript-bigints": "^4.0.0",
-    "purescript-strings": "^4.0.1",
-    "purescript-math": "^2.1.1"
+    "purescript-integers": "^5.0.0",
+    "purescript-maybe": "^5.0.0",
+    "purescript-bigints": "^6.0.0",
+    "purescript-strings": "^5.0.0",
+    "purescript-math": "^3.0.0"
   },
   "devDependencies": {
-    "purescript-psci-support": "^4.0.0",
-    "purescript-quickcheck": "^6.1.0"
+    "purescript-psci-support": "^5.0.0",
+    "purescript-quickcheck": "^7.1.0"
   }
 }

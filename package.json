@@ -6,13 +6,18 @@
     "big-integer": "^1.6.26"
   },
   "devDependencies": {
-    "bower": "^1.8.4",
-    "pulp": "^12.3.0",
-    "purescript": "^0.12.0"
+    "bower": "^1.8.12",
+    "pulp": "^15.0.0",
+    "purescript": "^0.14.0"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lumihq/purescript-fixed-precision.git"
+  },
+  "scripts": {
+    "deps": "bower install",
+    "build": "pulp build -o output-pulp",
+    "clean": "rm -rf .spago bower_components output output-pulp node_modules"
   },
   "license": "Apache-2.0"
 }
