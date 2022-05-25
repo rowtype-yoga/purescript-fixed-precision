@@ -1,25 +1,27 @@
 {
-  "name": "purescript-fixed-precision",
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/lumihq/purescript-fixed-precision.git"
-  },
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "output"
-  ],
-  "dependencies": {
-    "purescript-integers": "^5.0.0",
-    "purescript-maybe": "^5.0.0",
-    "purescript-bigints": "^6.0.0",
-    "purescript-strings": "^5.0.0",
-    "purescript-math": "^3.0.0"
-  },
-  "devDependencies": {
-    "purescript-psci-support": "^5.0.0",
-    "purescript-quickcheck": "^7.1.0"
-  }
+    "name": "purescript-fixed-precision",
+    "license": [
+        "Apache-2.0"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/lumihq/purescript-fixed-precision"
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "bower_components",
+        "output"
+    ],
+    "dependencies": {
+        "purescript-arrays": "^v7.0.0",
+        "purescript-bigints": "^v7.0.1",
+        "purescript-control": "^v6.0.0",
+        "purescript-integers": "^v6.0.0",
+        "purescript-maybe": "^v6.0.0",
+        "purescript-numbers": "^v9.0.0",
+        "purescript-partial": "^v4.0.0",
+        "purescript-prelude": "^v6.0.0",
+        "purescript-strings": "^v6.0.0"
+    }
 }

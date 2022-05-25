@@ -7,7 +7,7 @@ import Data.BigInt as BigInt
 import Data.Maybe (Maybe(..), fromJust, isJust)
 import Effect (Effect)
 import Effect.Console (log)
-import Math as Math
+import Data.Number as Math
 import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck (arbitrary, quickCheck', (<?>), (===))
 import Test.QuickCheck.Gen (Gen, chooseInt, uniform, suchThat)
