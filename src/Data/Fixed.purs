@@ -18,7 +18,7 @@ module Data.Fixed
   , round
   , rescale
   , approxDiv
-  , kind Precision
+  , Precision
   , One
   , TenTimes
   , P1
@@ -37,7 +37,7 @@ module Data.Fixed
 
 import Prelude
 
-import Control.MonadZero (guard)
+import Control.Alternative (guard)
 import Data.Array (replicate)
 import Data.BigInt (BigInt)
 import Data.BigInt as BigInt
@@ -47,12 +47,12 @@ import Data.Monoid as Monoid
 import Data.Ord (abs)
 import Data.String.CodeUnits as StringCU
 import Data.String as String
-import Math as Math
+import Data.Number as Math
 import Partial.Unsafe (unsafePartial)
 import Prim.TypeError (class Warn, Text)
 
 -- | A kind for type-level precision information
-foreign import kind Precision
+foreign import data Precision :: Type
 
 -- | No decimal places
 foreign import data One :: Precision
